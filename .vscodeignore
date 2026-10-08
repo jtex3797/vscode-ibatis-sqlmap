@@ -1,0 +1,7 @@
+test/**
+tools/**
+samples/**
+images/**
+.gitignore
+.gitattributes
+**/*.vsix
