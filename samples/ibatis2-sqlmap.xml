@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="Order">
+
+	<typeAlias alias="order" type="com.example.shop.domain.Order"/>
+
+	<resultMap id="orderResult" class="order">
+		<result property="orderId" column="ORDER_ID"/>
+		<result property="status" column="STATUS"/>
+		<result property="amount" column="AMOUNT"/>
+	</resultMap>
+
+	<sql id="orderColumns">
+		O.ORDER_ID, O.CUSTOMER_ID, O.STATUS, O.AMOUNT, O.ORDERED_AT
+	</sql>
+
+	<!-- search orders with optional conditions -->
+	<select id="searchOrders" parameterClass="map" resultMap="orderResult">
+		SELECT <include refid="orderColumns"/>
+		  FROM ORDERS O
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="AND" property="status">
+				O.STATUS = #status#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="keyword">
+				O.MEMO LIKE '%' || #keyword# || '%'
+			</isNotEmpty>
+			<isGreaterThan prepend="AND" property="minAmount" compareValue="0">
+				O.AMOUNT &gt;= #minAmount:NUMERIC#
+			</isGreaterThan>
+			<iterate prepend="AND" property="orderIds" open="O.ORDER_ID IN (" close=")" conjunction=",">
+				#orderIds[]#
+			</iterate>
+		</dynamic>
+		 ORDER BY $sortColumn$ DESC
+	</select>
+
+	<select id="getMonthlySales" parameterClass="map" resultClass="hashmap">
+	<![CDATA[
+		SELECT TO_CHAR(O.ORDERED_AT, 'YYYY-MM') AS SALES_MONTH,
+		       COUNT(*) AS ORDER_COUNT,
+		       NVL(SUM(O.AMOUNT), 0) AS TOTAL_AMOUNT
+		  FROM ORDERS O
+		 WHERE O.ORDERED_AT >= TO_DATE(#fromDate#, 'YYYYMMDD')
+		   AND O.ORDERED_AT <  TO_DATE(#toDate#, 'YYYYMMDD')
+		   AND O.STATUS <> 'CANCELLED' -- cancelled orders are not sales
+		 GROUP BY TO_CHAR(O.ORDERED_AT, 'YYYY-MM')
+		 ORDER BY SALES_MONTH
+	]]>
+	</select>
+
+	<insert id="insertOrder" parameterClass="order">
+		<selectKey keyProperty="orderId" resultClass="long">
+			SELECT ORDER_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO ORDERS (ORDER_ID, CUSTOMER_ID, STATUS, AMOUNT, ORDERED_AT)
+		VALUES (#orderId#, #customerId#, 'NEW', #amount:NUMERIC:0#, SYSDATE)
+	</insert>
+
+	<update id="updateStatus" parameterClass="map">
+		UPDATE ORDERS
+		   SET STATUS = #status,jdbcType=VARCHAR#
+		 WHERE ORDER_ID = #orderId#
+	</update>
+
+	<parameterMap id="closeMonthParams" class="map">
+		<parameter property="month" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="closedCount" jdbcType="NUMERIC" mode="OUT"/>
+	</parameterMap>
+
+	<procedure id="closeMonth" parameterMap="closeMonthParams">
+		{call SHOP_BATCH.CLOSE_MONTH(?, ?)}
+	</procedure>
+
+	<delete id="deleteOld" parameterClass="int">
+		DELETE FROM ORDERS WHERE ORDERED_AT &lt; ADD_MONTHS(SYSDATE, -#months#)
+	</delete>
+
+</sqlMap>

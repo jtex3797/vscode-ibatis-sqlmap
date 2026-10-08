@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="shop" default="dist">
+	<target name="clean">
+		<delete dir="build"/>
+	</target>
+	<target name="copy-maps">
+		<copy todir="build/classes">
+			<fileset dir="src" includes="**/*.xml"/>
+			<mapper type="glob" from="*.xml" to="*.xml"/>
+		</copy>
+	</target>
+	<target name="reset-db">
+		<sql driver="org.example.Driver" url="jdbc:example:test" userid="test" password="test">
+			DELETE FROM ORDERS WHERE STATUS = 'TEST';
+		</sql>
+	</target>
+	<select name="unused"><option>1</option></select>
+</project>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sqlMap namespace="Customer" xmlns="http://ibatis.apache.org/mapping" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+	<alias>
+		<typeAlias alias="Customer" type="Example.Shop.Domain.Customer, Example.Shop"/>
+	</alias>
+
+	<resultMaps>
+		<resultMap id="CustomerResult" class="Customer">
+			<result property="Id" column="CUSTOMER_ID"/>
+			<result property="Name" column="NAME"/>
+		</resultMap>
+	</resultMaps>
+
+	<statements>
+		<select id="FindCustomers" parameterClass="map" resultMap="CustomerResult">
+			SELECT CUSTOMER_ID, NAME, GRADE
+			  FROM CUSTOMER
+			<dynamic prepend="WHERE">
+				<isNotNull prepend="AND" property="Grade">GRADE = #Grade#</isNotNull>
+				<isNotEmpty prepend="AND" property="Name">NAME LIKE #Name# + '%'</isNotEmpty>
+			</dynamic>
+			ORDER BY NAME
+		</select>
+
+		<update id="UpdateGrade" parameterClass="Customer">
+			UPDATE CUSTOMER SET GRADE = #Grade:VarChar# WHERE CUSTOMER_ID = #Id#
+		</update>
+	</statements>
+
+</sqlMap>

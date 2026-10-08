@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.mapper.ProductMapper">
+
+	<resultMap id="productResult" type="Product">
+		<id property="id" column="product_id"/>
+		<result property="name" column="name"/>
+		<result property="price" column="price"/>
+	</resultMap>
+
+	<sql id="productColumns">p.product_id, p.name, p.price, p.category, p.updated_at</sql>
+
+	<select id="findProducts" resultMap="productResult">
+		SELECT <include refid="productColumns"/>
+		  FROM product p
+		<where>
+			<if test="category != null and category != ''">
+				AND p.category = #{category}
+			</if>
+			<if test="minPrice != null">
+				AND p.price <![CDATA[ >= ]]> #{minPrice, jdbcType=DECIMAL}
+			</if>
+			<if test="ids != null and ids.size() > 0">
+				AND p.product_id IN
+				<foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+			</if>
+		</where>
+		ORDER BY ${orderBy}
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<insert id="insertProduct" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO product (name, price, category, updated_at)
+		VALUES (#{name}, #{price}, #{category}, NOW())
+	</insert>
+
+	<update id="touchProducts">
+		UPDATE product
+		<set>
+			updated_at = CURRENT_TIMESTAMP,
+			<if test="price != null">price = #{price},</if>
+		</set>
+		WHERE category = #{category}
+	</update>
+
+</mapper>
