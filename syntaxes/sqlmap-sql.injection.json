@@ -1,0 +1,590 @@
+{
+  "comment": "iBatis sqlMap·MyBatis mapper XML 의 문장 본문을 SQL 로 색 입히는 주입 문법. 내장 XML 문법보다 먼저 적용(L:). 종료는 줄이 아니라 XML 구조 기준(본문은 닫는 문장 태그, CDATA 안은 ]]>). 내장 SQL 문법은 쓰지 않음: 여러 줄 규칙과 [..] 규칙이 ]]>·닫는 태그를 삼키고, 902개 단어 규칙 때문에 약 10배 느림. 회귀 검사는 test/tokenize_check.js",
+  "scopeName": "sqlmap-sql.injection",
+  "injectionSelector": "L:text.xml - comment - string - meta.tag - meta.sqlmap",
+  "patterns": [
+    {
+      "include": "#root"
+    }
+  ],
+  "repository": {
+    "root": {
+      "comment": "sqlMap·mapper 루트 안에서만 동작. 시작 조건은 둘 중 하나: (1) 여는 태그가 같은 줄에서 > 로 닫힘(자기닫힘과 빈 요소 <mapper ..></mapper> 제외, 속성값 안의 > 는 따옴표를 인식해 건너뜀) (2) 같은 줄에서 닫히지 않으면서 namespace= 가 있음. 설정 파일의 <sqlMap resource=../>, Ant 의 <mapper type=../> 는 대상 아님. begin 은 폭 0 이라 여는 태그 자체는 내장 XML 규칙이 칠함",
+      "begin": "(?=<(?:sqlMap|mapper)(?=[\\s>])(?:(?:\"[^\"]*\"|'[^']*'|[^>\"'])*(?<!/)>(?!</(?:sqlMap|mapper)\\s*>)|(?=[^>]*\\bnamespace\\s*=)(?!(?:\"[^\"]*\"|'[^']*'|[^>\"'])*>)))",
+      "end": "(</)(sqlMap|mapper)\\s*(?:(>)|$)",
+      "endCaptures": {
+        "0": {
+          "name": "meta.tag.xml"
+        },
+        "1": {
+          "name": "punctuation.definition.tag.xml"
+        },
+        "2": {
+          "name": "entity.name.tag.localname.xml"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.xml"
+        }
+      },
+      "name": "meta.sqlmap.xml",
+      "patterns": [
+        {
+          "include": "#statement"
+        },
+        {
+          "include": "text.xml"
+        }
+      ]
+    },
+    "statement": {
+      "comment": "문장 태그. end 의 \\2 는 여는 태그 이름. 닫는 태그의 > 가 다음 줄에 있어도 끝나도록 (?:(>)|$). (/>) 는 자기닫힘 <sql id=../>",
+      "begin": "(<)(select|insert|update|delete|statement|procedure|sql)(?=[\\s/>])",
+      "beginCaptures": {
+        "0": {
+          "name": "meta.tag.xml"
+        },
+        "1": {
+          "name": "punctuation.definition.tag.xml"
+        },
+        "2": {
+          "name": "entity.name.tag.localname.xml"
+        }
+      },
+      "end": "(</)(\\2)\\s*(?:(>)|$)|(/>)",
+      "endCaptures": {
+        "0": {
+          "name": "meta.tag.xml"
+        },
+        "1": {
+          "name": "punctuation.definition.tag.xml"
+        },
+        "2": {
+          "name": "entity.name.tag.localname.xml"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.xml"
+        },
+        "4": {
+          "name": "punctuation.definition.tag.xml"
+        }
+      },
+      "name": "meta.statement.sqlmap.xml",
+      "patterns": [
+        {
+          "include": "#open-attrs"
+        },
+        {
+          "include": "#body"
+        }
+      ]
+    },
+    "open-attrs": {
+      "comment": "여는 태그의 속성 구간. \\G 로 태그 이름 바로 뒤에서만 시작해 > 앞에서 종료. 속성 색은 내장 XML 의 tagStuff 재사용",
+      "begin": "\\G(?!/?>)",
+      "end": "(?=/?>)",
+      "name": "meta.tag.xml",
+      "patterns": [
+        {
+          "include": "text.xml#tagStuff"
+        }
+      ]
+    },
+    "body": {
+      "comment": "CDATA 밖 본문. 닫는 문장 태그 앞에서 종료. 언어 매핑이 없어 Ctrl+/ 는 XML 주석 그대로(동적 태그 줄에서도 안전)",
+      "begin": "(>)",
+      "beginCaptures": {
+        "1": {
+          "name": "meta.tag.xml punctuation.definition.tag.xml"
+        }
+      },
+      "end": "(?=</(?:select|insert|update|delete|statement|procedure|sql)\\s*(?:>|$))",
+      "contentName": "meta.embedded.inline.sql",
+      "patterns": [
+        {
+          "include": "#cdata"
+        },
+        {
+          "include": "#xml-comment"
+        },
+        {
+          "include": "#inner-tag"
+        },
+        {
+          "include": "text.xml#entity"
+        },
+        {
+          "include": "#placeholders"
+        },
+        {
+          "include": "#jdbc-escape"
+        },
+        {
+          "include": "#line-comment-text"
+        },
+        {
+          "include": "#block-comment-text"
+        },
+        {
+          "include": "#sq-text"
+        },
+        {
+          "include": "#dq-text"
+        },
+        {
+          "include": "#bq-text"
+        },
+        {
+          "include": "#jdbc-param"
+        },
+        {
+          "include": "#sql-words"
+        }
+      ]
+    },
+    "cdata": {
+      "comment": "CDATA 안은 SQL. 표식만 태그 구두점 색. contentName 이 package.json 의 embeddedLanguages 로 언어 sql 에 매핑돼 Ctrl+/ 가 -- 주석",
+      "begin": "<!\\[CDATA\\[",
+      "end": "\\]\\]>",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.cdata.begin.xml"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.cdata.end.xml"
+        }
+      },
+      "contentName": "meta.embedded.block.sql",
+      "patterns": [
+        {
+          "include": "#placeholders"
+        },
+        {
+          "include": "#jdbc-escape"
+        },
+        {
+          "include": "#line-comment-cdata"
+        },
+        {
+          "include": "#block-comment-cdata"
+        },
+        {
+          "include": "#sq-cdata"
+        },
+        {
+          "include": "#dq-cdata"
+        },
+        {
+          "include": "#bq-cdata"
+        },
+        {
+          "include": "#jdbc-param"
+        },
+        {
+          "include": "#sql-words"
+        }
+      ]
+    },
+    "sql-words": {
+      "comment": "SQL 단어. 순서 고정: 숫자, 한정 이름(A.B, A.B.C 를 통째 소비해 A.END·SEQ.NEXTVAL 이 키워드로 칠해지지 않게), 함수(여는 괄호가 뒤따를 때만), 키워드. 점·콜론·@ 바로 뒤 단어는 제외($al$.DESC, :end). 목록을 고치면 tokenize_check.js 의 FNS·KWS 도 같이 고침(불일치는 매니페스트 조건에서 실패)",
+      "patterns": [
+        {
+          "match": "\\b\\d+(?:\\.\\d+)?\\b",
+          "name": "constant.numeric.sql"
+        },
+        {
+          "match": "\\b[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)+"
+        },
+        {
+          "match": "(?i)(?<![.:@])\\b(?:nvl|nvl2|decode|coalesce|nullif|greatest|least|to_char|to_number|to_date|to_timestamp|cast|convert|substr|substrb|instr|length|lengthb|lpad|rpad|ltrim|rtrim|trim|upper|lower|initcap|replace|translate|concat|chr|ascii|regexp_replace|regexp_substr|regexp_instr|regexp_like|regexp_count|round|trunc|ceil|floor|abs|mod|power|sqrt|sign|exp|ln|log|add_months|months_between|last_day|next_day|extract|sum|count|avg|max|min|stddev|variance|median|listagg|row_number|rank|dense_rank|ntile|lag|lead|first_value|last_value|ratio_to_report|sys_connect_by_path|xmlagg|xmlelement|wm_concat|ifnull|isnull|if|now|date_format|str_to_date|concat_ws|group_concat|substring|left|right|date_add|date_sub|datediff|sys_guid|curdate|last_insert_id|char_length|to_clob)\\b(?=\\s*\\()",
+          "name": "support.function.sql"
+        },
+        {
+          "match": "(?i)(?<![.:@])\\b(?:select|distinct|from|where|and|or|not|in|is|null|like|between|exists|case|when|then|else|end|as|on|join|inner|left|right|full|outer|cross|natural|using|union|all|intersect|minus|except|group|by|order|having|asc|desc|nulls|first|last|limit|offset|fetch|with|over|partition|rollup|cube|connect|prior|start|level|nocycle|any|some|escape|for|insert|into|values|update|set|delete|merge|matched|returning|create|alter|drop|truncate|table|index|view|sequence|commit|rollback|call|begin|declare|rownum|rowid|dual|sysdate|systimestamp|nextval|currval|true|false|rows|only|nowait|within|siblings|unbounded|preceding|following|current|interval|default|duplicate|key|of|recursive|replace|current_date|current_timestamp)\\b",
+          "name": "keyword.other.sql"
+        }
+      ]
+    },
+    "cdata-plain": {
+      "comment": "CDATA 밖 문자열·블록 주석 안에 든 CDATA. 안쪽은 바깥 색 그대로 두고 표식만 칠함",
+      "begin": "<!\\[CDATA\\[",
+      "end": "\\]\\]>",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.cdata.begin.xml"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.cdata.end.xml"
+        }
+      }
+    },
+    "xml-comment": {
+      "comment": "본문 안 XML 주석. 안에 </select> 글자가 있어도 문장이 끊기지 않음",
+      "begin": "<!--",
+      "end": "-->",
+      "name": "comment.block.xml",
+      "captures": {
+        "0": {
+          "name": "punctuation.definition.comment.xml"
+        }
+      }
+    },
+    "inner-tag": {
+      "comment": "본문 안의 동적 태그(isNotEmpty, if, include 등 이름 무관). 내장 XML 의 일반 태그 규칙과 같은 캡처",
+      "begin": "(</?)(?:([-\\w\\.]+)((:)))?([-\\w\\.:]+)",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.tag.xml"
+        },
+        "2": {
+          "name": "entity.name.tag.namespace.xml"
+        },
+        "3": {
+          "name": "entity.name.tag.xml"
+        },
+        "4": {
+          "name": "punctuation.separator.namespace.xml"
+        },
+        "5": {
+          "name": "entity.name.tag.localname.xml"
+        }
+      },
+      "end": "(/?>)",
+      "name": "meta.tag.xml",
+      "patterns": [
+        {
+          "include": "text.xml#tagStuff"
+        }
+      ]
+    },
+    "placeholders": {
+      "comment": "자리표시자. #x# 는 iBatis 인라인 파라미터 형태만 인정(#a#, #a.b#, #a[]#, #a:TYPE#, #a:TYPE:null값#, #a,jdbcType=X#): '#FF0000','#00FF00' 이나 ITEM#CD,STORE#CD, V$SESSION,V$LOCK 을 자리표시자로 보지 않기 위함. #{..}·${..} 는 MyBatis. $ 쪽은 문자열 치환이라 색을 달리함. 어느 것도 ]]> 와 < 를 넘지 못함",
+      "patterns": [
+        {
+          "match": "(#)[A-Za-z_][\\w.\\[\\]]*(?::\\w+(?::[^#\\s<>'\"`()]*)?|(?:,\\w+=[\\w.]+)+)?(#)",
+          "name": "variable.parameter.bind.sqlmap",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.variable.sqlmap"
+            },
+            "2": {
+              "name": "punctuation.definition.variable.sqlmap"
+            }
+          }
+        },
+        {
+          "match": "\\$[A-Za-z_][\\w.\\[\\]]*\\$",
+          "name": "keyword.control.substitution.sqlmap"
+        },
+        {
+          "match": "#\\{(?:(?!\\]\\]>)[^}<])*\\}",
+          "name": "variable.parameter.bind.sqlmap"
+        },
+        {
+          "match": "\\$\\{(?:(?!\\]\\]>)[^}<])*\\}",
+          "name": "keyword.control.substitution.sqlmap"
+        }
+      ]
+    },
+    "jdbc-escape": {
+      "comment": "JDBC 이스케이프 {call 이름(..)} · {? = call ..}. 여러 줄 begin/end 는 쓰지 않음: 닫히지 않은 { 가 ]]>·닫는 문장 태그를 삼키기 때문. 한 줄 안에서 } 까지 닫히면 통째로(인자 안은 자리표시자·문자열·? ·단어를 다시 칠함), 아니면 머리({call 이름)만. 인자는 { } < 와 ]]> 를 넘지 못하고 #{..}·${..} 만 중괄호 허용. 문자열·주석보다 앞에 두지만 위치가 더 앞선 따옴표·주석이 먼저 잡히므로 그 안의 {call 은 칠하지 않음",
+      "patterns": [
+        {
+          "match": "(\\{)\\s*(?:(\\?)\\s*(=)\\s*)?(?i:(call))\\b\\s*([A-Za-z_][\\w$#]*(?:\\.[A-Za-z_][\\w$#]*)*)?((?:[#$]\\{(?:(?!\\]\\]>)[^{}<])*\\}|(?!\\]\\]>)[^{}<])*)(\\})",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.jdbc-escape.begin.sqlmap"
+            },
+            "2": {
+              "name": "variable.parameter.bind.sqlmap"
+            },
+            "3": {
+              "name": "keyword.operator.assignment.sql"
+            },
+            "4": {
+              "name": "keyword.other.sql"
+            },
+            "5": {
+              "name": "entity.name.function.sql"
+            },
+            "6": {
+              "patterns": [
+                {
+                  "include": "#placeholders"
+                },
+                {
+                  "include": "#sq-cdata"
+                },
+                {
+                  "include": "#dq-cdata"
+                },
+                {
+                  "include": "#jdbc-param"
+                },
+                {
+                  "include": "#sql-words"
+                }
+              ]
+            },
+            "7": {
+              "name": "punctuation.definition.jdbc-escape.end.sqlmap"
+            }
+          }
+        },
+        {
+          "match": "(\\{)\\s*(?:(\\?)\\s*(=)\\s*)?(?i:(call))\\b\\s*([A-Za-z_][\\w$#]*(?:\\.[A-Za-z_][\\w$#]*)*)?",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.jdbc-escape.begin.sqlmap"
+            },
+            "2": {
+              "name": "variable.parameter.bind.sqlmap"
+            },
+            "3": {
+              "name": "keyword.operator.assignment.sql"
+            },
+            "4": {
+              "name": "keyword.other.sql"
+            },
+            "5": {
+              "name": "entity.name.function.sql"
+            }
+          }
+        }
+      ]
+    },
+    "jdbc-param": {
+      "comment": "parameterMap 식 ? 자리표시자(#x# 와 같은 색). ?? 는 PostgreSQL JSON 연산자의 JDBC 이스케이프지만 같은 색으로 둠. #placeholders 에 넣지 않음: 그 규칙은 문자열·주석 안에서도 include 되기 때문. body·cdata 에서 문자열·주석 규칙 뒤, sql-words 앞에만 둠",
+      "match": "\\?",
+      "name": "variable.parameter.bind.sqlmap"
+    },
+    "line-comment-cdata": {
+      "comment": "CDATA 안 -- 주석. ]]> 를 넘지 않음",
+      "name": "comment.line.double-dash.sql",
+      "begin": "--",
+      "end": "(?=\\]\\]>)|$",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.sql"
+        }
+      }
+    },
+    "line-comment-text": {
+      "comment": "CDATA 밖 -- 주석. 닫는 문장 태그와 CDATA 시작을 넘지 않음. 안의 태그는 태그 색(XML 로는 살아 있는 태그)",
+      "name": "comment.line.double-dash.sql",
+      "begin": "--",
+      "end": "(?=</(?:select|insert|update|delete|statement|procedure|sql)\\s*(?:>|$))|(?=<!\\[CDATA\\[)|$",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#inner-tag"
+        },
+        {
+          "include": "#xml-comment"
+        }
+      ]
+    },
+    "block-comment-cdata": {
+      "comment": "CDATA 안 블록 주석. 닫히지 않아도 ]]> 에서 끝남. 중첩 없음(Oracle·MySQL 기준)",
+      "name": "comment.block.sql",
+      "begin": "/\\*",
+      "end": "\\*/|(?=\\]\\]>)",
+      "captures": {
+        "0": {
+          "name": "punctuation.definition.comment.sql"
+        }
+      }
+    },
+    "block-comment-text": {
+      "comment": "CDATA 밖 블록 주석. 닫히지 않아도 닫는 문장 태그에서 끝남. 안의 태그는 태그 색",
+      "name": "comment.block.sql",
+      "begin": "/\\*",
+      "end": "\\*/|(?=</(?:select|insert|update|delete|statement|procedure|sql)\\s*(?:>|$))",
+      "captures": {
+        "0": {
+          "name": "punctuation.definition.comment.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#cdata-plain"
+        },
+        {
+          "include": "#inner-tag"
+        },
+        {
+          "include": "#xml-comment"
+        }
+      ]
+    },
+    "sq-cdata": {
+      "comment": "CDATA 안 작은따옴표 문자열. 닫히지 않아도 ]]> 에서 끝남. 안의 자리표시자에 색 유지",
+      "name": "string.quoted.single.sql",
+      "begin": "'",
+      "end": "'|(?=\\]\\]>)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.sql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#placeholders"
+        }
+      ]
+    },
+    "dq-cdata": {
+      "comment": "CDATA 안 큰따옴표(Oracle 식별자, MySQL 문자열)",
+      "name": "string.quoted.double.sql",
+      "begin": "\"",
+      "end": "\"|(?=\\]\\]>)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.sql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#placeholders"
+        }
+      ]
+    },
+    "bq-cdata": {
+      "comment": "CDATA 안 백틱(MySQL 식별자)",
+      "name": "string.quoted.other.backtick.sql",
+      "begin": "`",
+      "end": "`|(?=\\]\\]>)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.sql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#placeholders"
+        }
+      ]
+    },
+    "sq-text": {
+      "comment": "CDATA 밖 작은따옴표 문자열. 닫히지 않아도 닫는 문장 태그에서 끝남. 안의 태그·엔티티·자리표시자 인식",
+      "name": "string.quoted.single.sql",
+      "begin": "'",
+      "end": "'|(?=</(?:select|insert|update|delete|statement|procedure|sql)\\s*(?:>|$))",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.sql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#placeholders"
+        },
+        {
+          "include": "text.xml#entity"
+        },
+        {
+          "include": "#cdata-plain"
+        },
+        {
+          "include": "#inner-tag"
+        },
+        {
+          "include": "#xml-comment"
+        }
+      ]
+    },
+    "dq-text": {
+      "comment": "CDATA 밖 큰따옴표",
+      "name": "string.quoted.double.sql",
+      "begin": "\"",
+      "end": "\"|(?=</(?:select|insert|update|delete|statement|procedure|sql)\\s*(?:>|$))",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.sql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#placeholders"
+        },
+        {
+          "include": "text.xml#entity"
+        },
+        {
+          "include": "#cdata-plain"
+        },
+        {
+          "include": "#inner-tag"
+        },
+        {
+          "include": "#xml-comment"
+        }
+      ]
+    },
+    "bq-text": {
+      "comment": "CDATA 밖 백틱",
+      "name": "string.quoted.other.backtick.sql",
+      "begin": "`",
+      "end": "`|(?=</(?:select|insert|update|delete|statement|procedure|sql)\\s*(?:>|$))",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.sql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.sql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#placeholders"
+        },
+        {
+          "include": "text.xml#entity"
+        },
+        {
+          "include": "#cdata-plain"
+        },
+        {
+          "include": "#inner-tag"
+        },
+        {
+          "include": "#xml-comment"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "ibatis-sqlmap-sql",
+  "displayName": "iBATIS sqlMap SQL",
+  "description": "SQL highlighting inside iBATIS 2 sqlMap XML and MyBatis 3 mapper XML: CDATA and plain bodies, #param#, $subst$, ?, {call}, #{}, ${}",
+  "version": "0.2.0",
+  "publisher": "jtex3797",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jtex3797/vscode-ibatis-sqlmap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jtex3797/vscode-ibatis-sqlmap/issues"
+  },
+  "homepage": "https://github.com/jtex3797/vscode-ibatis-sqlmap#readme",
+  "engines": {
+    "vscode": "^1.64.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ibatis",
+    "ibatis2",
+    "mybatis",
+    "sqlmap",
+    "mapper",
+    "sql",
+    "xml",
+    "oracle",
+    "syntax highlighting"
+  ],
+  "contributes": {
+    "grammars": [
+      {
+        "scopeName": "sqlmap-sql.injection",
+        "path": "./syntaxes/sqlmap-sql.injection.json",
+        "injectTo": [
+          "text.xml"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.sql": "sql"
+        }
+      }
+    ]
+  }
+}
