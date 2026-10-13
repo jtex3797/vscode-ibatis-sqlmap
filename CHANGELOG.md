@@ -3,6 +3,7 @@
 ## 0.2.2
 
 - Simplified the README and description. Coloring is unchanged.
+- Added an extension icon.
 
 ## 0.2.1
 

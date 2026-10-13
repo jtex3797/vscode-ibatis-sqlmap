@@ -2,6 +2,7 @@ test/**
 tools/**
 samples/**
 images/**
+!images/icon.png
 CONTRIBUTING.md
 .gitignore
 .gitattributes

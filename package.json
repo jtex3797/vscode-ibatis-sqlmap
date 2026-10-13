@@ -5,6 +5,7 @@
   "version": "0.2.2",
   "publisher": "jtex3797",
   "license": "MIT",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/jtex3797/vscode-ibatis-sqlmap.git"
