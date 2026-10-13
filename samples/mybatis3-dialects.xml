@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.mapper.ReportMapper">
+
+	<!-- PostgreSQL -->
+	<select id="namesByCategory" resultType="map">
+		SELECT p.category, STRING_AGG(p.name, ', ') AS names, ARRAY_AGG(p.product_id) AS ids
+		  FROM product p
+		 WHERE p.name ILIKE #{pattern}
+		   AND p.updated_at >= DATE_TRUNC('month', CURRENT_DATE)
+		 GROUP BY p.category
+	</select>
+
+	<select id="dailyCounts" resultType="map">
+		SELECT d.day, COUNT(o.order_id) AS cnt
+		  FROM GENERATE_SERIES(#{from}::date, #{to}::date, INTERVAL '1 day') AS d(day)
+		  LEFT JOIN LATERAL (
+		       SELECT order_id FROM orders o WHERE o.ordered_on = d.day
+		  ) o ON TRUE
+		 GROUP BY d.day
+	</select>
+
+	<insert id="upsertStock">
+		INSERT INTO stock (product_id, qty) VALUES (#{id}, #{qty})
+		ON CONFLICT (product_id) DO UPDATE SET qty = EXCLUDED.qty
+	</insert>
+
+	<!-- SQL Server -->
+	<select id="recentProducts" resultType="map">
+		<![CDATA[
+		SELECT TOP (#{limit}) p.product_id, LEN(p.name) AS name_len,
+		       IIF(p.price > 100, 'high', 'low') AS band,
+		       CHARINDEX('-', p.code) AS dash_at
+		  FROM product p WITH (NOLOCK)
+		 WHERE p.updated_at >= DATEADD(day, -7, GETDATE())
+		]]>
+	</select>
+
+	<insert id="insertOrder">
+		INSERT INTO orders (order_id, ordered_on) VALUES (NEWID(), GETDATE())
+	</insert>
+
+	<select id="salesByQuarter" resultType="map">
+		SELECT category, [1] AS q1, [2] AS q2, [3] AS q3, [4] AS q4
+		  FROM (SELECT category, quarter, amount FROM sales) s
+		 PIVOT (SUM(amount) FOR quarter IN ([1], [2], [3], [4])) pv
+	</select>
+
+	<!-- DB2 -->
+	<select id="ordersByMonth" resultType="map">
+		SELECT VARCHAR_FORMAT(o.ordered_on, 'YYYY-MM') AS ym, COUNT(*) AS cnt
+		  FROM orders o
+		 GROUP BY VARCHAR_FORMAT(o.ordered_on, 'YYYY-MM')
+		  WITH UR
+	</select>
+
+</mapper>

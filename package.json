@@ -2,7 +2,7 @@
   "name": "ibatis-sqlmap-sql",
   "displayName": "iBATIS sqlMap SQL",
   "description": "SQL highlighting inside iBATIS 2 sqlMap XML and MyBatis 3 mapper XML: CDATA and plain bodies, #param#, $subst$, ?, {call}, #{}, ${}",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "jtex3797",
   "license": "MIT",
   "repository": {
@@ -28,6 +28,10 @@
     "sql",
     "xml",
     "oracle",
+    "mysql",
+    "postgresql",
+    "sqlserver",
+    "db2",
     "syntax highlighting"
   ],
   "contributes": {

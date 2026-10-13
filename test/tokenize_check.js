@@ -54,8 +54,8 @@ const TAGS = "select|insert|update|delete|statement|procedure|sql";
 const PH_RE = /#[A-Za-z_][^#\s]*#|\$[A-Za-z_][^$\s]*\$/g;
 
 // 단어 목록: 문법의 sql-words 와 같아야 함(매니페스트 조건에서 대조). 고칠 때는 양쪽을 같이
-const FNS = "nvl nvl2 decode coalesce nullif greatest least to_char to_number to_date to_timestamp cast convert substr substrb instr length lengthb lpad rpad ltrim rtrim trim upper lower initcap replace translate concat chr ascii regexp_replace regexp_substr regexp_instr regexp_like regexp_count round trunc ceil floor abs mod power sqrt sign exp ln log add_months months_between last_day next_day extract sum count avg max min stddev variance median listagg row_number rank dense_rank ntile lag lead first_value last_value ratio_to_report sys_connect_by_path xmlagg xmlelement wm_concat ifnull isnull if now date_format str_to_date concat_ws group_concat substring left right date_add date_sub datediff sys_guid curdate last_insert_id char_length to_clob".split(" ");
-const KWS = "select distinct from where and or not in is null like between exists case when then else end as on join inner left right full outer cross natural using union all intersect minus except group by order having asc desc nulls first last limit offset fetch with over partition rollup cube connect prior start level nocycle any some escape for insert into values update set delete merge matched returning create alter drop truncate table index view sequence commit rollback call begin declare rownum rowid dual sysdate systimestamp nextval currval true false rows only nowait within siblings unbounded preceding following current interval default duplicate key of recursive replace current_date current_timestamp".split(" ");
+const FNS = "nvl nvl2 decode coalesce nullif greatest least to_char to_number to_date to_timestamp cast convert substr substrb instr length lengthb lpad rpad ltrim rtrim trim upper lower initcap replace translate concat chr ascii regexp_replace regexp_substr regexp_instr regexp_like regexp_count round trunc ceil floor abs mod power sqrt sign exp ln log add_months months_between last_day next_day extract sum count avg max min stddev variance median listagg row_number rank dense_rank ntile lag lead first_value last_value ratio_to_report sys_connect_by_path xmlagg xmlelement wm_concat ifnull isnull if now date_format str_to_date concat_ws group_concat substring left right date_add date_sub datediff sys_guid curdate last_insert_id char_length to_clob string_agg array_agg generate_series date_trunc getdate dateadd iif len charindex newid varchar_format".split(" ");
+const KWS = "select distinct from where and or not in is null like between exists case when then else end as on join inner left right full outer cross natural using union all intersect minus except group by order having asc desc nulls first last limit offset fetch with over partition rollup cube connect prior start level nocycle any some escape for insert into values update set delete merge matched returning create alter drop truncate table index view sequence commit rollback call begin declare rownum rowid dual sysdate systimestamp nextval currval true false rows only nowait within siblings unbounded preceding following current interval default duplicate key of recursive replace current_date current_timestamp ilike lateral pivot unpivot nolock conflict".split(" ");
 
 // 고정 사례: 합성 조각. 실무 sqlMap 은 모양이 단조로운 경우가 많아(전부 CDATA, 닫는 태그는 자기 줄) 코퍼스 조건만으로는
 // 규칙이 일부 망가져도 통과하므로 가장자리 모양을 여기서 단언. expect 항목: [줄(0부터), 토큰 문자열, 있어야 할 scope 접두, 없어야 할 scope 접두]
@@ -217,6 +217,24 @@ const FIXTURES = [
       [r, "Select", KW], [r, "Select", ctx], [r, "NvL", FN], [r, "Left Join", KW], [r, "Join t", KW], [r, "LEFT (a)", FN], [r, "REPLACE (b)", FN], [r, "left join", KW], [r, "join u", KW], [r, "REPLACE INTO", KW], [r, "INTO v", KW],
       [r + 1, "INDEXES", null, KW], [r + 1, "INTO_X", null, KW], [r + 1, "ASCII2", null, FN], [r + 1, "LEFTY", null, FN], [r + 1, "LEFTY", null, KW], [r + 1, "ORDERS", null, KW], [r + 1, "nv(", null, FN], [r + 1, "nvl3", null, FN], [r + 1, "selects", null, KW], [r + 1, "current_", null, KW], [r + 1, "SUBSTRI", null, FN],
       [r + 2, "ﬂoor", FN], [r + 2, "ﬁrst", KW], [r + 2, "oﬀset", KW],
+    ]), [[10, "]]>", CD], [10, "</select", null, EMB], [11, "sqlMap", TAG]]),
+  },
+  {
+    // 방언 단어. 함수는 여는 괄호가 뒤따를 때만, 키워드는 컬럼명으로 드문 것만. TOP·VALUE·OUTPUT·DO·NOTHING·UR 은 컬럼명과 겹쳐 일부러 무색(결정 고정). CDATA 밖(2~4행)과 안(7~9행) 같은 줄
+    name: "F23 방언 단어",
+    lines: [SM, S("d1"),
+      "  SELECT TOP 5 len, LEN(a), value, output FROM t WITH (NOLOCK) WHERE n ILIKE 'x%' AND d = GETDATE()",
+      "  INSERT INTO u (a) VALUES (1) ON CONFLICT (a) DO NOTHING",
+      "  SELECT * FROM t CROSS JOIN LATERAL f(a) x PIVOT (SUM(v) FOR k IN (1)) p UNPIVOT (q FOR r IN (s)) z WITH UR",
+      "</select>", S("d2") + "<![CDATA[",
+      "  SELECT TOP 5 len, LEN(a), value, output FROM t WITH (NOLOCK) WHERE n ILIKE 'x%' AND d = GETDATE()",
+      "  INSERT INTO u (a) VALUES (1) ON CONFLICT (a) DO NOTHING",
+      "  SELECT * FROM t CROSS JOIN LATERAL f(a) x PIVOT (SUM(v) FOR k IN (1)) p UNPIVOT (q FOR r IN (s)) z WITH UR",
+      "]]></select>", "</sqlMap>"],
+    expect: [].concat(...[[2, SQLT], [7, SQLC]].map(([r, ctx]) => [
+      [r, " TOP ", null, KW], [r, "len,", null, FN], [r, "LEN(", FN], [r, "LEN(", ctx], [r, "value", null, KW], [r, "output", null, KW], [r, "NOLOCK", KW], [r, "ILIKE", KW], [r, "GETDATE", FN],
+      [r + 1, "CONFLICT", KW], [r + 1, "DO NOTHING", null, KW], [r + 1, "NOTHING", null, KW],
+      [r + 2, "LATERAL", KW], [r + 2, "PIVOT", KW], [r + 2, "UNPIVOT", KW], [r + 2, " UR", null, KW],
     ]), [[10, "]]>", CD], [10, "</select", null, EMB], [11, "sqlMap", TAG]]),
   },
 ];

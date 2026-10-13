@@ -13,7 +13,7 @@ The built-in XML grammar paints a whole `<![CDATA[ ... ]]>` body as one string a
 - parameterMap-style `?` placeholders (also `??`), and JDBC escapes such as `{call PKG.PROC(?, ?)}` and `{? = call FN(?)}`.
 - MyBatis 3 `#{...}` and `${...}`.
 - Dynamic tags (`<dynamic>`, `<isNotEmpty>`, `<iterate>`, `<if>`, `<where>`, `<foreach>`, `<include>`, ...) keep their XML colors.
-- SQL strings, `--` and `/* */` comments, numbers, keywords and common functions (Oracle and MySQL flavored). An unclosed quote or comment never leaks past `]]>` or the closing statement tag.
+- SQL strings, `--` and `/* */` comments, numbers, keywords and common functions: mainly Oracle and MySQL, plus common PostgreSQL, SQL Server and DB2 words (`STRING_AGG`, `ILIKE`, `GETDATE`, `PIVOT`, `NOLOCK`, `VARCHAR_FORMAT`, ...). An unclosed quote or comment never leaks past `]]>` or the closing statement tag.
 - iBATIS.NET maps (`<statements>` wrapper, `xmlns` on the root) work too.
 - Inside CDATA, **Toggle Line Comment** (`Ctrl+/`) inserts `--`.
 
@@ -21,6 +21,7 @@ The built-in XML grammar paints a whole `<![CDATA[ ... ]]>` body as one string a
 
 - Coloring only. No navigation, completion, validation or formatting.
 - Keywords and functions come from a fixed word list, not a SQL parser. Words outside the list keep the default color.
+- Dialect keywords that are also common column names (`TOP`, `VALUE`, `OUTPUT`, `DO`, `NOTHING`, `UR`) are left uncolored on purpose. Functions are colored only when followed by `(`, so `LEN(name)` is colored but a column named `len` is not.
 - The built-in SQL grammar is deliberately not reused: its multi-line rules swallow `]]>` and closing tags, and its large word list made large map files much slower to tokenize.
 - Only files whose root is `<sqlMap>` or `<mapper>` are affected. If the root's opening tag spans several lines, it needs a `namespace=` attribute to be recognized. Other XML (sqlMapConfig, mybatis-config, Ant builds) is colored exactly as before.
 - A `{call ...}` that spans several lines gets only its head colored.
@@ -50,7 +51,7 @@ Both scripts load the TextMate tokenizer (`vscode-textmate`, `vscode-oniguruma`)
 
 ## 한국어 요약
 
-iBATIS 2 sqlMap XML(MyBatis 3 mapper 포함)의 문장 본문을 SQL 색으로 칠하는 확장. CDATA 안팎 모두, `#x#`·`#x:TYPE#`·`$x$`·`?`·`{call ..}`·`#{}`·`${}` 를 구분해 칠함. 파일 언어는 XML 그대로이고 `<sqlMap>`·`<mapper>` 루트 밖은 바꾸지 않음(루트 여는 태그가 여러 줄이면 `namespace=` 필요). 색만 입히며 이동·자동완성·검증은 없음.
+iBATIS 2 sqlMap XML(MyBatis 3 mapper 포함)의 문장 본문을 SQL 색으로 칠하는 확장. CDATA 안팎 모두, `#x#`·`#x:TYPE#`·`$x$`·`?`·`{call ..}`·`#{}`·`${}` 를 구분해 칠함. 파일 언어는 XML 그대로이고 `<sqlMap>`·`<mapper>` 루트 밖은 바꾸지 않음(루트 여는 태그가 여러 줄이면 `namespace=` 필요). 색만 입히며 이동·자동완성·검증은 없음. 단어는 Oracle·MySQL 중심이고 PostgreSQL·SQL Server·DB2 의 흔한 함수·키워드도 칠함.
 
 ## License
 

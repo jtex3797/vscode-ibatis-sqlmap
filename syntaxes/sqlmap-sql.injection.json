@@ -187,7 +187,7 @@
       ]
     },
     "sql-words": {
-      "comment": "SQL 단어. 순서 고정: 숫자, 한정 이름(A.B, A.B.C 를 통째 소비해 A.END·SEQ.NEXTVAL 이 키워드로 칠해지지 않게), 함수(여는 괄호가 뒤따를 때만), 키워드. 점·콜론·@ 바로 뒤 단어는 제외($al$.DESC, :end). 목록을 고치면 tokenize_check.js 의 FNS·KWS 도 같이 고침(불일치는 매니페스트 조건에서 실패)",
+      "comment": "SQL 단어. 순서 고정: 숫자, 한정 이름(A.B, A.B.C 를 통째 소비해 A.END·SEQ.NEXTVAL 이 키워드로 칠해지지 않게), 함수(여는 괄호가 뒤따를 때만), 키워드. 점·콜론·@ 바로 뒤 단어는 제외($al$.DESC, :end). 목록을 고치면 tokenize_check.js 의 FNS·KWS 도 같이 고침(불일치는 매니페스트 조건에서 실패). TOP·VALUE·OUTPUT·DO·NOTHING·UR 은 컬럼명과 겹쳐 넣지 않음(F23)",
       "patterns": [
         {
           "match": "\\b\\d+(?:\\.\\d+)?\\b",
@@ -197,11 +197,11 @@
           "match": "\\b[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)+"
         },
         {
-          "match": "(?i)(?<![.:@])\\b(?:nvl|nvl2|decode|coalesce|nullif|greatest|least|to_char|to_number|to_date|to_timestamp|cast|convert|substr|substrb|instr|length|lengthb|lpad|rpad|ltrim|rtrim|trim|upper|lower|initcap|replace|translate|concat|chr|ascii|regexp_replace|regexp_substr|regexp_instr|regexp_like|regexp_count|round|trunc|ceil|floor|abs|mod|power|sqrt|sign|exp|ln|log|add_months|months_between|last_day|next_day|extract|sum|count|avg|max|min|stddev|variance|median|listagg|row_number|rank|dense_rank|ntile|lag|lead|first_value|last_value|ratio_to_report|sys_connect_by_path|xmlagg|xmlelement|wm_concat|ifnull|isnull|if|now|date_format|str_to_date|concat_ws|group_concat|substring|left|right|date_add|date_sub|datediff|sys_guid|curdate|last_insert_id|char_length|to_clob)\\b(?=\\s*\\()",
+          "match": "(?i)(?<![.:@])\\b(?:nvl|nvl2|decode|coalesce|nullif|greatest|least|to_char|to_number|to_date|to_timestamp|cast|convert|substr|substrb|instr|length|lengthb|lpad|rpad|ltrim|rtrim|trim|upper|lower|initcap|replace|translate|concat|chr|ascii|regexp_replace|regexp_substr|regexp_instr|regexp_like|regexp_count|round|trunc|ceil|floor|abs|mod|power|sqrt|sign|exp|ln|log|add_months|months_between|last_day|next_day|extract|sum|count|avg|max|min|stddev|variance|median|listagg|row_number|rank|dense_rank|ntile|lag|lead|first_value|last_value|ratio_to_report|sys_connect_by_path|xmlagg|xmlelement|wm_concat|ifnull|isnull|if|now|date_format|str_to_date|concat_ws|group_concat|substring|left|right|date_add|date_sub|datediff|sys_guid|curdate|last_insert_id|char_length|to_clob|string_agg|array_agg|generate_series|date_trunc|getdate|dateadd|iif|len|charindex|newid|varchar_format)\\b(?=\\s*\\()",
           "name": "support.function.sql"
         },
         {
-          "match": "(?i)(?<![.:@])\\b(?:select|distinct|from|where|and|or|not|in|is|null|like|between|exists|case|when|then|else|end|as|on|join|inner|left|right|full|outer|cross|natural|using|union|all|intersect|minus|except|group|by|order|having|asc|desc|nulls|first|last|limit|offset|fetch|with|over|partition|rollup|cube|connect|prior|start|level|nocycle|any|some|escape|for|insert|into|values|update|set|delete|merge|matched|returning|create|alter|drop|truncate|table|index|view|sequence|commit|rollback|call|begin|declare|rownum|rowid|dual|sysdate|systimestamp|nextval|currval|true|false|rows|only|nowait|within|siblings|unbounded|preceding|following|current|interval|default|duplicate|key|of|recursive|replace|current_date|current_timestamp)\\b",
+          "match": "(?i)(?<![.:@])\\b(?:select|distinct|from|where|and|or|not|in|is|null|like|between|exists|case|when|then|else|end|as|on|join|inner|left|right|full|outer|cross|natural|using|union|all|intersect|minus|except|group|by|order|having|asc|desc|nulls|first|last|limit|offset|fetch|with|over|partition|rollup|cube|connect|prior|start|level|nocycle|any|some|escape|for|insert|into|values|update|set|delete|merge|matched|returning|create|alter|drop|truncate|table|index|view|sequence|commit|rollback|call|begin|declare|rownum|rowid|dual|sysdate|systimestamp|nextval|currval|true|false|rows|only|nowait|within|siblings|unbounded|preceding|following|current|interval|default|duplicate|key|of|recursive|replace|current_date|current_timestamp|ilike|lateral|pivot|unpivot|nolock|conflict)\\b",
           "name": "keyword.other.sql"
         }
       ]
