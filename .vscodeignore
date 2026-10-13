@@ -2,6 +2,7 @@ test/**
 tools/**
 samples/**
 images/**
+CONTRIBUTING.md
 .gitignore
 .gitattributes
 **/*.vsix

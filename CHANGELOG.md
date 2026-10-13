@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Simplified the README and description. Coloring is unchanged.
+
 ## 0.2.1
 
 - More dialect words. Functions: PostgreSQL `string_agg`, `array_agg`, `generate_series`, `date_trunc`; SQL Server `getdate`, `dateadd`, `iif`, `len`, `charindex`, `newid`; DB2 `varchar_format`. Keywords: `ilike`, `lateral`, `pivot`, `unpivot`, `nolock`, `conflict`.

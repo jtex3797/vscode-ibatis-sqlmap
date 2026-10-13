@@ -1,57 +1,56 @@
 # iBATIS sqlMap SQL
 
-SQL syntax highlighting inside **iBATIS 2 sqlMap XML** (and MyBatis 3 mapper XML) for VS Code.
+SQL highlighting for **iBATIS 2 sqlMap** (Java and .NET) and **MyBatis 3 mapper** XML files.
 
-The built-in XML grammar paints a whole `<![CDATA[ ... ]]>` body as one string and leaves SQL outside CDATA uncolored. This extension injects into the XML grammar so that statement bodies are colored as SQL. The file language stays XML, and nothing outside `<sqlMap>` / `<mapper>` changes.
+VS Code shows the SQL in these files as plain text, and a `<![CDATA[ ... ]]>` block as one long string. This extension highlights that SQL. The file stays XML, and other XML files are not affected.
 
 ![Without the extension (left) and with it (right)](images/before-after.png)
 
-## Features
+## What gets colored
 
-- Bodies of `<select>`, `<insert>`, `<update>`, `<delete>`, `<statement>`, `<procedure>` and `<sql>` inside a `<sqlMap>` or `<mapper>` root, both inside and outside CDATA.
-- iBATIS 2 inline parameters: `#id#`, `#list[]#`, `#amount:NUMERIC#`, `#amount:NUMERIC:0#`, `#status,jdbcType=VARCHAR#`. String substitution `$sortColumn$` gets a different color, so it stands out.
-- parameterMap-style `?` placeholders (also `??`), and JDBC escapes such as `{call PKG.PROC(?, ?)}` and `{? = call FN(?)}`.
-- MyBatis 3 `#{...}` and `${...}`.
-- Dynamic tags (`<dynamic>`, `<isNotEmpty>`, `<iterate>`, `<if>`, `<where>`, `<foreach>`, `<include>`, ...) keep their XML colors.
-- SQL strings, `--` and `/* */` comments, numbers, keywords and common functions: mainly Oracle and MySQL, plus common PostgreSQL, SQL Server and DB2 words (`STRING_AGG`, `ILIKE`, `GETDATE`, `PIVOT`, `NOLOCK`, `VARCHAR_FORMAT`, ...). An unclosed quote or comment never leaks past `]]>` or the closing statement tag.
-- iBATIS.NET maps (`<statements>` wrapper, `xmlns` on the root) work too.
-- Inside CDATA, **Toggle Line Comment** (`Ctrl+/`) inserts `--`.
+- SQL inside `<select>`, `<insert>`, `<update>`, `<delete>`, `<statement>`, `<procedure>` and `<sql>`, with or without CDATA
+- Parameters: iBATIS `#id#`, `#amount:NUMERIC#` and MyBatis `#{id}`
+- Text substitution `$column$` and `${column}`, in a different color so it stands out
+- `?` placeholders and `{call PKG.PROC(?, ?)}`
+- Keywords and functions: mostly Oracle and MySQL, plus common PostgreSQL, SQL Server and DB2 ones
 
-## Limits
+Dynamic tags such as `<isNotEmpty>` and `<if>` keep their XML colors. Inside CDATA, `Ctrl+/` comments out a line with `--`.
 
-- Coloring only. No navigation, completion, validation or formatting.
-- Keywords and functions come from a fixed word list, not a SQL parser. Words outside the list keep the default color.
-- Dialect keywords that are also common column names (`TOP`, `VALUE`, `OUTPUT`, `DO`, `NOTHING`, `UR`) are left uncolored on purpose. Functions are colored only when followed by `(`, so `LEN(name)` is colored but a column named `len` is not.
-- The built-in SQL grammar is deliberately not reused: its multi-line rules swallow `]]>` and closing tags, and its large word list made large map files much slower to tokenize.
-- Only files whose root is `<sqlMap>` or `<mapper>` are affected. If the root's opening tag spans several lines, it needs a `namespace=` attribute to be recognized. Other XML (sqlMapConfig, mybatis-config, Ant builds) is colored exactly as before.
-- A `{call ...}` that spans several lines gets only its head colored.
+## Good to know
 
-## Scopes
+- It only adds colors. There is no completion, validation or formatting.
+- Only files whose root tag is `<sqlMap>` or `<mapper>` are colored. If the root tag is split across several lines, it must include a `namespace` attribute; otherwise the file is not detected.
+- Only SQL keywords and functions from a built-in list are colored. `TOP`, `VALUE`, `OUTPUT`, `DO`, `NOTHING` and `UR` are left plain on purpose, because they are often used as column names.
 
-Colors come from your theme. To adjust them, use these scopes in `editor.tokenColorCustomizations.textMateRules`:
+## Changing the colors
+
+Colors come from your theme. To change one, add a rule for its scope in `settings.json`:
+
+```json
+"editor.tokenColorCustomizations": {
+  "textMateRules": [
+    { "scope": "keyword.control.substitution.sqlmap", "settings": { "foreground": "#E06C75" } }
+  ]
+}
+```
 
 | What | Scope |
 |---|---|
-| `#x#`, `#{x}`, `?` | `variable.parameter.bind.sqlmap` |
-| `$x$`, `${x}` | `keyword.control.substitution.sqlmap` |
-| SQL keywords | `keyword.other.sql` |
-| SQL functions | `support.function.sql` |
+| `#id#`, `#{id}`, `?` | `variable.parameter.bind.sqlmap` |
+| `$column$`, `${column}` | `keyword.control.substitution.sqlmap` |
+| Keywords | `keyword.other.sql` |
+| Functions | `support.function.sql` |
 | Procedure name in `{call ...}` | `entity.name.function.sql` |
-| SQL in CDATA / outside CDATA | `meta.embedded.block.sql` / `meta.embedded.inline.sql` |
 
-## Development
+## 한국어 안내
 
-```
-node test/tokenize_check.js            # tokenizes samples/ and runs the fixture assertions
-node test/tokenize_check.js --corpus <folder with your sqlMap files>
-node tools/preview.js                  # writes tools/out/preview.html (without / with the extension)
-```
+iBATIS 2 sqlMap(Java, .NET)과 MyBatis 3 mapper XML 파일 안의 SQL에 색을 입히는 확장입니다. VS Code는 이 파일 안의 SQL을 일반 텍스트로, CDATA 블록은 하나의 긴 문자열로 표시합니다. 이 확장을 설치하면 그 SQL에 색이 입혀집니다. 파일 형식은 XML 그대로이고, 다른 XML 파일에는 영향이 없습니다.
 
-Both scripts load the TextMate tokenizer (`vscode-textmate`, `vscode-oniguruma`) from an installed editor's `resources/app/node_modules`; `preview.js` also reads its default Dark Modern and Light Modern themes. Use `--app <.../resources/app>` to point at an editor where those modules are plain folders.
-
-## 한국어 요약
-
-iBATIS 2 sqlMap XML(MyBatis 3 mapper 포함)의 문장 본문을 SQL 색으로 칠하는 확장. CDATA 안팎 모두, `#x#`·`#x:TYPE#`·`$x$`·`?`·`{call ..}`·`#{}`·`${}` 를 구분해 칠함. 파일 언어는 XML 그대로이고 `<sqlMap>`·`<mapper>` 루트 밖은 바꾸지 않음(루트 여는 태그가 여러 줄이면 `namespace=` 필요). 색만 입히며 이동·자동완성·검증은 없음. 단어는 Oracle·MySQL 중심이고 PostgreSQL·SQL Server·DB2 의 흔한 함수·키워드도 칠함.
+- `<select>`, `<insert>`, `<update>`, `<delete>`, `<sql>` 같은 SQL 태그 안의 SQL을 CDATA 안팎 구분 없이 칠합니다.
+- `#id#`, `#{id}`, `?` 같은 파라미터와 `$column$`, `${column}` 같은 문자열 치환은 서로 구분되도록 다른 색으로 칠합니다.
+- 키워드와 함수는 Oracle·MySQL 위주이고, PostgreSQL·SQL Server·DB2에서 자주 쓰는 것도 들어 있습니다.
+- 색만 입힙니다. 자동 완성, 문법 검사, 코드 포맷팅 기능은 없습니다.
+- 루트 태그가 `<sqlMap>` 또는 `<mapper>`인 파일에만 적용됩니다. 루트 태그를 여러 줄에 걸쳐 쓴 경우에는 `namespace` 속성이 있어야 합니다.
 
 ## License
 
